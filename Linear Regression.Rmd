@@ -1,0 +1,420 @@
+---
+title: "Linear Regression"
+author: "Lokeshwari, Sriprasath"
+date: "February 9, 2020"
+output: word_document
+---
+### California Housing Dataset prediction using Linear Regression
+```{r}
+library(tidyverse)
+require(tidyverse)
+California <- read.csv("https://personal.utdallas.edu/~sxg180154/housing.csv")
+```
+### Analysing the Dataset - California
+##### View the california Dataset, getting summary of the Dataset (California) and dimension of the California Dataset
+```{r}
+View(California)
+summary(California)
+dim(California)
+```
+#### Finding the percentage of Null values in each column to eliminate if there are more than 50% NULL values in a column
+
+```{r}
+for(i in 1:ncol(California)) {
+  colName <- colnames(California[i])
+  pctNull <- sum(is.na(California[,i]))/length(California[,i])
+    print(paste("Column ", colName, " has ", round(pctNull*100, 3), "% of nulls"))
+}
+```
+
+##### Cleaning all the NULL values in each row using exclude() function
+
+##### From the dimension of the original California data and the cleaned data we can conclude that 207 rows with NULL values are eliminated
+
+
+```{r}
+cali_clean <- na.exclude(California)
+dim(cali_clean)
+```
+
+
+##### Getting a correlation plot for visuaization using corrplot()
+
+```{r}
+library(corrplot)
+require(corrplot)
+Mat <- cor(cali_clean[sapply(cali_clean, is.numeric)])
+corrplot(Mat)
+```
+
+
+### Visual Representation and correlation of the Dataset - California
+
+##### From the graph we can estimate that the correlation betweeen 
+
+##### Total_rooms - Households
+
+##### Population - Total_rooms
+
+##### Population - Households
+
+##### Median_Income - Median_House_value are highly correlated
+
+##### Getting the correlation values for each predictors and the output value(median_house_value)
+
+##### Features having highest correlation among the predictors
+
+```{r}
+cor(cali_clean$total_rooms, cali_clean$households)
+cor(cali_clean$population,cali_clean$total_rooms)
+cor(cali_clean$population,cali_clean$households)
+```
+
+##### => Correlation between the output value(median_house_value) and all other predictors
+
+```{r}
+cor(cali_clean$median_income,cali_clean$median_house_value)
+cor(cali_clean$longitude,cali_clean$median_house_value)
+cor(cali_clean$latitude,cali_clean$median_house_value)
+cor(cali_clean$housing_median_age,cali_clean$median_house_value)
+cor(cali_clean$total_rooms,cali_clean$median_house_value)
+cor(cali_clean$total_bedrooms,cali_clean$median_house_value)
+cor(cali_clean$population,cali_clean$median_house_value)
+cor(cali_clean$households,cali_clean$median_house_value)
+
+```
+
+#### Plotting the housing_value based on the latitude, longitude and population
+##### This plot shows that the region with the highest population has high housing value
+
+```{r}
+ggplot(data = cali_clean,mapping = aes(cali_clean$latitude,y=cali_clean$longitude, color = cali_clean$median_house_value, size = cali_clean$population/100))+geom_point()
+```
+
+
+##### => Plotting the point ggplot of all predictors vs the housing value
+
+```{r}
+
+ggplot(data = cali_clean,mapping= aes(cali_clean$longitude, cali_clean$median_house_value))+geom_point(color = "light green")
+```
+
+##### This graph concludes that the median_house_value is higher from -122.5 to -117.5 longitude. And the number of houses are more with median_house_value around 1e+05 to 3e+05 and longitude from -122.4 to -117.5
+
+
+```{r}
+ggplot(data = cali_clean,mapping= aes(cali_clean$latitude, cali_clean$median_house_value))+geom_point(color = "light blue")
+```
+
+##### This graph concludes that the median_house_value is higher at latitude 32.5 and 37.5. The number of houses are more with the median_house_value around 1e+05 to 4e+05 and laitude from 32.5 to 40.0
+
+
+```{r}
+ggplot(data = cali_clean,mapping= aes(cali_clean$housing_median_age, cali_clean$median_house_value))+geom_point(color = "light pink")
+```
+
+##### This graph shows that the median_house_value is same for all ages of houses. The houses are spread over all values of the houses and different age
+
+
+```{r}
+ggplot(data = cali_clean,mapping= aes(cali_clean$total_rooms, cali_clean$median_house_value))+geom_point(color = "grey")
+```
+
+##### Almost 90% of the house area have 0 to 5000 rooms in a particular area. The median_house_value is evenly distributed for the area with total_rooms from 0 to 5000.
+
+
+```{r}
+ggplot(data = cali_clean,mapping= aes(cali_clean$total_bedrooms, cali_clean$median_house_value))+geom_point(color = "cyan")
+```
+
+##### Almost 80% of the house area have 0 to 1000 bedrooms in a particular area. The median_house_value is evenly distributed for the area with total_bedrooms from 0 to 1000.
+
+
+```{r}
+ggplot(data = cali_clean,mapping= aes(cali_clean$population, cali_clean$median_house_value))+geom_point(color = "purple")
+```
+
+##### Almost 92% of the house area have 0 to 5000 population count in a particular area. The median_house_value is evenly distributed for the area with population count from 0 to 5000
+
+
+```{r}
+ggplot(data = cali_clean,mapping= aes(cali_clean$households, cali_clean$median_house_value))+geom_point(color = "dark red")
+```
+
+##### Almost 90% of the house area have 0 to 1000 households in a particular area. The median_house_value is evenly distributed for the area with households from 0 to 1000.
+
+ 
+```{r}
+ggplot(data = cali_clean,mapping= aes(cali_clean$median_income, cali_clean$median_house_value))+geom_point(color = "light yellow")
+```
+
+##### The graph is linear for the house_value and median_income. The people who gets high income have bought houses with high house_value. The median_house_value gradually increases with increase in house_value.
+
+
+```{r}
+ggplot(data = cali_clean,mapping= aes(cali_clean$ocean_proximity, cali_clean$median_house_value))+geom_point(color = "pink")
+
+```
+
+##### We can conclude that the there are less number of houses in near ocean and near bay and exactly 5 houses in island. The house_value is more in other area compared to Island.
+
+
+#### => Finding the concentration of house values based on the ocean proximity
+
+```{r}
+ggplot(data = cali_clean,mapping = aes(x = cali_clean$ocean_proximity, y= cali_clean$median_house_value))+geom_boxplot()
+```
+
+##### We can conclude that the there are less number of houses in near ocean and near bay and exactly 5 houses in island
+
+##### But the Median_house_value increases for the houses near ocean and near bay than the houses in the <1HOcean and Inland
+
+
+
+#### => Number of houses in each category of ocean proximity
+
+```{r}
+group_ocean = cali_clean %>% group_by(ocean_proximity) %>% summarise(Number = n()) %>% arrange(desc(Number))
+group_ocean
+```
+
+##### We can conclude that there are less houses near the ocean and bay and exactly 5 houses in the island
+
+
+#### => Top 10 costliest houses in the california housing data
+
+```{r}
+cost = cali_clean %>% filter(!is.na(median_house_value)) %>% arrange(desc(median_house_value)) %>% head(10)
+cost 
+```
+
+
+
+#### => Splitting rooms_per_household, bedrooms_per_household, population_per_household
+
+```{r}
+rooms = trunc(cali_clean$total_rooms/cali_clean$households)
+bedrooms = trunc(cali_clean$total_bedrooms/cali_clean$total_rooms)
+popu_per_house = trunc(cali_clean$population/cali_clean$households)
+```
+
+##### Adding the additional columns(rooms_per_household, bedrooms_per_room, population_per_husehold) in the cali_full dataframe
+
+
+##### Splitting the data into the smaller dataset with respect to every household and population
+
+```{r}
+cali_full = cali_clean %>% add_column(rooms = rooms,bedrooms = bedrooms, pop_per_house = popu_per_house) 
+```
+
+
+##### => Again finding the correlation between the predcitors and the newly added columns
+
+##### This correlation is also similar to the original data where we obtained the derived dataset i.e. rooms_per_household, bedrooms_per_room and 
+
+```{r}
+matrix <- cor(cali_full[sapply(cali_full, is.numeric)])
+corrplot(matrix)
+cor(matrix)
+```
+
+##### The Median_house_value is more correlated to the median_house_value
+
+##### From the correlation matrix we get the value of correlation between the each predictor and the output value(median_house_value)
+
+##### => Plotting the graph between the median_house_value, median_income , total_rooms and housing _median_age
+
+
+```{r}
+plot(cali_full[,c("median_house_value","median_income","total_rooms","housing_median_age")])
+```
+
+##### This plot shows the distribution of median_house_value , median_income , total_rooms and median_housing_age  among each other predictor.
+
+
+```{r}
+boxplot(cali_full$median_house_value)
+```
+
+##### => The quantile range of median_house_value is plotted using box_plot. From this we can conclude that the min house_value is from 1e+05 to 5e+05 with some outliers. And the median value of the house_value is 2e+00
+
+
+
+```{r}
+hist(cali_full$median_house_value,col = "dark green", border = 2)
+```
+
+##### => From the histogram we can conclude that the distribution is normal with Gaussian curve. The curve peaks at 2e+05 median_house_value and gradually reduces.
+
+
+#### => ggplot for the derived features from the original dataset
+
+```{r}
+ggplot(cali_full, aes(x = rooms)) + geom_histogram(fill = "yellow", color = "black", binwidth = 1) 
+ggplot(cali_full, aes(bedrooms)) + geom_histogram(color = "black", fill = "navy blue", binwidth = 1)
+ggplot(cali_full, aes(x = pop_per_house)) + geom_histogram(fill = " orange", color = "black", binwidth = 100)
+```
+
+##### The ggplot shows the histogram of rooms_per_household, bedroom_per_room and population_per_household. SO the rooms per house ranges from 0 to 10, bedrooms per room differs from 0 to 2 and population per household ranges from 0 to 100.
+
+
+### Developing a model using linear regression method
+
+##### => Creating model for each features of the dataset to find out the f stat and R^2 value
+##### To find out the importance of each feature
+
+```{r}
+fit1 <- lm(median_house_value ~ longitude,cali_clean)
+summary(fit1)
+fit2 <- lm(median_house_value ~ latitude , cali_clean)
+summary(fit2)
+fit3 <- lm(median_house_value ~ housing_median_age, cali_clean)
+summary(fit3)
+fit4 <- lm(median_house_value ~ total_rooms, cali_clean)
+summary(fit4)
+fit5 <- lm(median_house_value ~ total_bedrooms, cali_clean)
+summary(fit5)
+fit6 <- lm(median_house_value ~ population, cali_clean)
+summary(fit6)
+fit7 <- lm(median_house_value ~ households, cali_clean)
+summary(fit7)
+fit8 <- lm(median_house_value ~ median_income, cali_clean)
+summary(fit8)
+```
+
+##### From all these model we can conclude that the Latitude, Housing_median_age, Total_rooms and Median_income has high F-statistic and R^2 value. Since the correlation between median_income and median_house_value is higher we consider it for the creating the first model.
+
+
+```{r}
+model1 <- lm(median_house_value ~ median_income, cali_full)
+summary(model1)
+```
+
+##### Standard_error in this model is 83740 but the r^2 value and the f statistic value are higher which  suits for a best model.
+
+
+### Consideration of Categorical data
+
+##### Since there is only one categorical data and it is correlated with the median_house_value 
+##### We have to consider the ocean proximity by converting it into quantitative variable.
+
+##### => Converting the categorical variable into integer values which eases the method to find the correlation between the predictor and the output value.
+
+```{r}
+cali_full$ocean_proximity =factor(cali_full$ocean_proximity, level = c("<1H OCEAN","INLAND","ISLAND","NEAR BAY","NEAR OCEAN"), labels = c(1,2,3,4,5))
+```
+
+
+##### => Model with all the features of cali_full dataset including the Categorical variable and derived features
+
+```{r}
+model2 <- lm(median_house_value ~ ., cali_full)
+summary(model2)
+```
+
+##### This model concludes with F-statistic - 2499 and R^2 - 0.6473 values and relatively with a lesser Standard error of 68580. Hence this model is comparitively a good fit than other models.This model includes the categorical variables and the derived features.
+
+
+#### => The model with longitude and latitude features.
+
+```{r}
+model3 <- lm(median_house_value ~ longitude+latitude, cali_full)
+summary(model3)
+```
+
+##### This model includes just the logitude and latitude feature of the dataset. The F-statistic increase from 2499 to 3263 but the R^2 value is reduced from 0.6473 to 0.2421.. And the Standard error rate is also increased to 100500.
+
+
+#### => The model with all the features except longitude and latitude and derived features.
+
+```{r}
+model4 <- lm(median_house_value ~ housing_median_age+households+total_rooms+population+total_bedrooms, cali_full)
+summary(model4)
+```
+
+##### This model includes all other features except the logitude and latitude feature of the data set. The F-statistic has reduced to 771 and the R^2 value is also reduced to 0.1588. This model is not a good fit for linear regression. Hence some features needed to be altered.
+
+
+#### => The model with all features except derived features.
+
+```{r}
+model5<- lm(median_house_value ~ longitude+latitude+housing_median_age+total_rooms+population+median_income+ocean_proximity, cali_full)
+summary(model5)
+```
+
+##### Including all the features except the features we splitted - rooms_per_house, bedrooms_per_room, population_per_house. The f-statistics is 3403 and R^2 value is 0.625. The std error is 70710. The F-statistic and R^2 values are higher which can prove this to be a best model. But the Standard error is comapritively higher at 70710.
+
+
+##### When compared the R^2 ans F-statistic we can conclude that the both is higher if we consider all the features including the feaures we extracted from the existing  predictors
+##### i.e. model2 has comparitively higher F-statistic and R^2 value and lesser Standard error.
+
+
+
+### => Forward and Backward selection for creating a model.
+
+##### => Extracting features for forward and backward selection
+
+```{r}
+long <- cali_full$longitude
+lat <- cali_full$latitude
+age <- cali_full$housing_median_age
+rooms <- cali_full$total_rooms
+bed <- cali_full$total_bedrooms
+pop <- cali_full$population
+house <- cali_full$households
+inc <- cali_full$median_income
+ocean <- cali_full$ocean_proximity
+```
+
+### => Forward selection based on AIC.
+
+```{r}
+fit.forward <- step(lm(cali_full$median_house_value ~ 1),
+                     scope = list(upper = ~ long + lat + age + rooms + bed + pop + house +inc+ocean),direction = "forward")
+
+summary(fit.forward)
+```
+
+### => Backward elimination based on AIC.
+
+```{r}
+fit.backward <-step(lm(cali_full$median_house_value  ~ long + lat + age + rooms + bed + pop + house +inc+ocean),
+                     scope = list(lower = ~1),direction = "backward")
+
+summary(fit.backward)
+```
+
+### => Both forward/backward selection based on AIC.
+
+```{r}
+fit.both <-step(lm(cali_full$median_house_value ~ 1),
+                 scope = list(lower = ~1,
+                              upper = ~ long + lat + age + rooms + bed + pop + house +inc+ocean),
+                 direction = "both")
+summary(fit.both)
+```
+
+##### Since model2 is comparitively the best model, visualizing it using plot function which returns the following graphs -  the Residual vs Fitted, Normal QQ plot, Scale-Location, Residuals vs leverage.
+
+```{r}
+plot(model2)
+```
+
+### Predicting the outcome value or Testing the model 
+
+##### Obtaining the predicted value by using one of the value of the trained data.
+
+```{r}
+df <- as.data.frame(cali_full[1,])
+df
+df[,"median_house_value"] <- NULL
+df
+```
+
+##### From the df variable we can see that the actual value is 452600. Then the median_house_value is eliminated and passed the data for testing the model.
+
+```{r}
+predict.lm(model2,df )
+```
+
+##### The predicted value 409162.3 concludes that the error rate between the Actual - Predicted output is very small. Hence this model is a best fitted linear regression model.
